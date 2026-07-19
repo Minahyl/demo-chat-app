@@ -2,67 +2,65 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 
+# import namespaces
 
-def main():
-    os.system("cls" if os.name == "nt" else "clear")
 
-    load_dotenv()
 
-    endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-    api_key = os.getenv("API_Key")
-    model = os.getenv("MODEL_DEPLOYMENT")
+def main(): 
+    # Clear the console
+    os.system('cls' if os.name == 'nt' else 'clear')
 
-    if not endpoint:
-        raise ValueError("AZURE_OPENAI_ENDPOINT is missing")
+    try:
+        # Get configuration settings 
+        load_dotenv()
+        azure_openai_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+        model_deployment = os.getenv("MODEL_DEPLOYMENT")
+        api_key = os.getenv("API_Key")
 
-    if not api_key:
-        raise ValueError("API_Key is missing")
+        if not model_deployment:
+            raise ValueError("MODEL_DEPLOYMENT environment variable is required")
 
-    if not model:
-        raise ValueError("MODEL_DEPLOYMENT is missing")
+        # Initialize the OpenAI client
+        
+        client = OpenAI(base_url=azure_openai_endpoint, api_key=api_key)
 
-    # Create client
-    client = OpenAI(
-        base_url=endpoint,
-        api_key=api_key,
-    )
-
-    print("=== Azure AI Chatbot ===")
-
-    last_response_id = None
-
-    while True:
-        input_text = input("\nEnter a prompt (or type 'quit' to exit): ")
-
-        if input_text.lower() == "quit":
-            print("Goodbye!")
-            break
-
-        if not input_text.strip():
-            print("Please enter a prompt.")
-            continue
-
-        # First request
-        if last_response_id is None:
+        # Loop until the user wants to quit
+        while True:
+            input_text = input('\nEnter a prompt (or type "quit" to exit): ')
+            if input_text.lower() == "quit":
+                break
+            if len(input_text) == 0:
+                print("Please enter a prompt.")
+                continue
+            # ChatCompleteions API
+            # ====================
+            # Get a response
+            # completion = client.chat.completions.create(
+            #     model=model_deployment,
+            #     messages=[
+            #         {
+            #             "role": "user",
+            #             "content": input_text,
+            #         }
+            #     ],
+            # )
+            # print(f"\nResponse:\n{completion.choices[0].message.content}")
+        
+        #    Responses API
+        # ===================
+            last_response_id = None  
             response = client.responses.create(
-                model=model,
-                instructions="You are a helpful Python tutor. Explain concepts in English.",
-                input=input_text,
-            )
-        # Continue conversation
-        else:
-            response = client.responses.create(
-                model=model,
-                instructions="You are a helpful Python tutor. Explain concepts in English.",
+                model=model_deployment,
+                # instructions="""You are a helpful assistant that hepls find information about the topic provided by the user. 
+                #                 Please provide a response in bullet points.""",
+                instructions="""You are a helpful assistant that helps translate the given user input.""",
                 input=input_text,
                 previous_response_id=last_response_id,
             )
+            print(f"\nResponse:\n{response.output_text}")
 
-        print("\nResponse:")
-        print(response.output_text)
+    except Exception as ex:
+        print(ex)
 
-        last_response_id = response.id
-
-
-if __name__ == "__main__":
+if __name__ == '__main__': 
     main()
